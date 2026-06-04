@@ -69,7 +69,10 @@ function dateKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padSta
 
 function getActiveCal() { return calendars.find(c => c.id === activeCalId); }
 
-// calColor/calCls/calBgcls defined above with CAL_TYPES
+// Helper functions for calendar type colors
+function calColor(type){ return CAL_TYPES.find(t=>t.val===type)?.color||'#9999b8'; }
+function calCls(type){ return 'col-gen'; }
+function calBgcls(type){ return 'bg-gen'; }
 
 // ─── AUTH ──────────────────────────────────────────────────────────────────
 getRedirectResult(auth).catch(()=>{});
