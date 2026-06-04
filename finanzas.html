@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#0f0f13">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mis Finanzas">
+  <title>Mis Finanzas 💼</title>
+  <!-- Para cambiar estilos: edita css/styles.css -->
+  <link rel="stylesheet" href="css/shared.css">
+  <link rel="stylesheet" href="css/finanzas.css">
+</head>
+<body>
+  <!-- Back to hub -->
+  <a href="index.html" style="position:fixed;top:16px;left:16px;z-index:50;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;font-size:13px;color:var(--text2);text-decoration:none;display:flex;align-items:center;gap:6px">← Hub</a>
+
+
+<div id="app">
+
+<!-- LOADING -->
+<div class="page" id="pg-load"><div class="spinner"></div><div style="color:var(--text2);font-size:14px">Cargando...</div></div>
+
+<!-- LOGIN -->
+<div class="page" id="pg-login">
+  <div style="font-size:64px;margin-bottom:20px">💼</div>
+  <div style="font-size:28px;font-weight:700;margin-bottom:8px">Mis Finanzas</div>
+  <div style="font-size:15px;color:var(--text2);margin-bottom:48px;line-height:1.5">Tu tracker personal.<br>Seguro, privado, sincronizado.</div>
+  <button class="g-btn" id="btn-google">
+    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Continuar con Google
+  </button>
+  <div id="login-err" style="margin-top:16px;font-size:13px;color:var(--red);display:none"></div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="page" id="pg-ob">
+  <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Configuración inicial</div>
+  <div id="ob-prog" style="display:flex;gap:6px;margin-bottom:24px"></div>
+  <!-- Step 1: Banks -->
+  <div class="ob-s on" id="ob-1">
+    <div class="ob-t">👋 ¡Hola! Configuremos tu app</div>
+    <div class="ob-sub">¿Qué bancos usas? Selecciona todos los que apliquen.</div>
+    <div class="ob-cl" id="ob-banks"></div>
+    <button class="pb" id="ob-n1">Siguiente →</button>
+  </div>
+  <!-- Step 2: Products -->
+  <div class="ob-s" id="ob-2">
+    <div class="ob-t">💳 Tus tarjetas y wallets</div>
+    <div class="ob-sub">Selecciona exactamente qué productos tienes de cada banco.</div>
+    <div class="ob-cl" id="ob-prods"></div>
+    <button class="pb" id="ob-n2">Siguiente →</button>
+  </div>
+  <!-- Step 3: Balances -->
+  <div class="ob-s" id="ob-3">
+    <div class="ob-t">💰 Saldo inicial de tus cuentas</div>
+    <div class="ob-sub">Ingresa el saldo actual de cada cuenta para que la app lo refleje correctamente. Puedes dejarlo en 0 y ajustar después.</div>
+    <div id="ob-bal-fields"></div>
+    <button class="pb" id="ob-n3">Siguiente →</button>
+  </div>
+  <!-- Step 4: Income -->
+  <div class="ob-s" id="ob-4">
+    <div class="ob-t">📅 Ingresos recurrentes</div>
+    <div class="ob-sub">Si tienes un ingreso fijo mensual, configúralo aquí. La app te recordará confirmarlo cada mes.</div>
+    <div class="fl">Descripción del ingreso</div>
+    <input class="ti" id="ob-idesc" type="text" placeholder="Ej: Nómina, Salario..."/>
+    <div class="fl">Monto (DOP)</div>
+    <input class="ti" id="ob-iamt" type="text" inputmode="decimal" placeholder="Ej: 25,000"/>
+    <div class="fl">Día del mes que cobras</div>
+    <input class="ti" id="ob-iday" type="number" min="1" max="31" placeholder="Ej: 20"/>
+    <div class="fl">¿A qué cuenta depositas?</div>
+    <select class="si" id="ob-iacc" style="margin-top:0"></select>
+    <button class="pb" id="ob-fin">Empezar a usar la app ✓</button>
+    <button id="ob-skip" style="width:100%;padding:12px;background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;margin-top:8px">Saltar por ahora</button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="page" id="pg-home">
+  <div class="hdr">
+    <div><div class="hdr-sub">Bienvenido de vuelta</div><h1>Mis Finanzas 💼</h1></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="position:relative;cursor:pointer" id="bell-btn">
+        <span style="font-size:24px">🔔</span>
+        <div id="notif-badge" class="nbadge"></div>
+      </div>
+      <div class="av" id="user-av" onclick="openOv('pf-ov')">?</div>
+    </div>
+  </div>
+  <div class="sync-bar"><div class="sd" id="sync-dot"></div><span id="sync-lbl">Conectando...</span></div>
+  <!-- Recurring reminder banner -->
+  <div id="rec-banner" style="display:none"></div>
+  <div class="bal-card">
+    <div class="bal-lbl">Balance total</div>
+    <div class="bal-amt" id="bal-amt">RD$ 0</div>
+    <div class="bal-usd" id="bal-usd">≈ USD 0.00</div>
+    <div class="bal-row">
+      <div class="bal-item"><div class="dot" style="background:#3dd68c"></div><span id="bal-in">Ingresos: RD$0</span></div>
+      <div class="bal-item"><div class="dot" style="background:#ff6b6b"></div><span id="bal-ex">Gastos: RD$0</span></div>
+    </div>
+  </div>
+  <div id="alerts-ct"></div>
+  <div class="q-btns">
+    <button class="qb qb-in" id="btn-inc">💰 Registrar ingreso</button>
+    <button class="qb qb-ex" id="btn-exp">💸 Registrar gasto</button>
+  </div>
+  <div class="stats">
+    <div class="sc"><div class="sc-lbl">Ingresos este mes</div><div class="sc-val inc" id="st-in">RD$0</div></div>
+    <div class="sc"><div class="sc-lbl">Gastos este mes</div><div class="sc-val exp" id="st-ex">RD$0</div></div>
+  </div>
+  <div style="margin-bottom:24px"><div class="sec">Gasto por categoría</div><div id="cat-bars"><div class="empty">📊<br>Sin gastos este mes</div></div></div>
+  <div class="sec">Últimos movimientos</div>
+  <div class="tx-list" id="tx-home"><div class="empty">🧾<br>Aún no hay movimientos</div></div>
+</div>
+
+<!-- CUENTAS -->
+<div class="page" id="pg-acc">
+  <div class="hdr"><h1>Mis cuentas</h1></div>
+  <div id="acc-list"><div class="empty">💳<br>Cargando cuentas...</div></div>
+  <button onclick="openManageAccts()" style="width:100%;padding:14px;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.25);border-radius:var(--rs);color:#a89dff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px">⚙️ Gestionar mis cuentas</button>
+</div>
+
+<!-- HISTORIAL -->
+<div class="page" id="pg-hist">
+  <div class="hdr"><h1>Historial</h1></div>
+  <div class="frow" id="hist-filters">
+    <button class="fb on" data-f="all">📋 Todo</button>
+    <button class="fb" data-f="income">💰 Ingresos</button>
+    <button class="fb" data-f="expense">💸 Gastos</button>
+  </div>
+  <div class="tx-list" id="tx-hist"><div class="empty">📅<br>Sin movimientos</div></div>
+</div>
+
+<!-- ANÁLISIS -->
+<div class="page" id="pg-chart">
+  <div class="hdr"><h1>Análisis 📊</h1></div>
+  <div class="frow" id="chart-type-btns">
+    <button class="fb on" data-ct="expense">💸 Gastos</button>
+    <button class="fb" data-ct="income">💰 Ingresos</button>
+  </div>
+  <div class="frow" id="chart-month-btns"></div>
+  <div class="chart-wrap"><canvas id="pie-canvas" style="width:220px;height:220px"></canvas></div>
+  <div class="chart-legend" id="chart-legend"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav" id="bnav" style="display:none">
+  <button class="ni on" data-p="pg-home"><span class="ico">🏠</span><span>Inicio</span></button>
+  <button class="ni" data-p="pg-acc"><span class="ico">💳</span><span>Cuentas</span></button>
+  <button class="ni" data-p="pg-hist"><span class="ico">📅</span><span>Historial</span></button>
+  <button class="ni" data-p="pg-chart"><span class="ico">📊</span><span>Análisis</span></button>
+  
+</nav>
+</div>
+
+<!-- NOTIF SLIDE PANEL -->
+<div id="notif-panel" style="position:fixed;top:0;right:-100%;width:min(340px,100%);height:100%;background:var(--bg2);z-index:200;transition:right .3s ease;box-shadow:-4px 0 24px rgba(0,0,0,.5);display:flex;flex-direction:column">
+  <div style="padding:20px 16px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:18px;font-weight:700">🔔 Alertas</div>
+    <button onclick="closeNotifPanel()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px">✕</button>
+  </div>
+  <div id="notif-list" style="flex:1;overflow-y:auto;padding:16px"></div>
+</div>
+<div id="notif-backdrop" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199"></div>
+
+<!-- REGISTER MODAL -->
+<div class="ov" id="reg-ov">
+  <div class="sheet" id="reg-sh">
+    <button class="cls" id="reg-cls">✕</button>
+    <div class="hdl"></div>
+    <div class="sdots" id="reg-dots"></div>
+    <div class="sh-t" id="reg-title"></div>
+    <div class="ms on" id="ms-1"><div style="font-size:18px;font-weight:600;margin-bottom:16px">¿Qué tipo de movimiento es?</div><div class="opt-l" id="ms1-o"></div></div>
+    <div class="ms" id="ms-2"><div style="font-size:18px;font-weight:600;margin-bottom:16px" id="ms2-q"></div><div class="ctog"><button class="cb on" id="dop-b">🇩🇴 DOP</button><button class="cb" id="usd-b">🇺🇸 USD</button></div><input class="bi" id="amt-f" type="text" inputmode="decimal" placeholder="0"/><button class="pb" id="ms2-nx">Continuar →</button></div>
+    <div class="ms" id="ms-3"><div style="font-size:18px;font-weight:600;margin-bottom:16px" id="ms3-q"></div><input class="ti" id="desc-f" type="text"/><button class="pb" id="ms3-nx">Continuar →</button></div>
+    <div class="ms" id="ms-4"><div style="font-size:18px;font-weight:600;margin-bottom:16px" id="ms4-q"></div><div class="opt-l" id="ms4-o"></div></div>
+    <div class="ms" id="ms-5"><div style="font-size:18px;font-weight:600;margin-bottom:16px">¿Tipo de gasto?</div><select class="si" id="cat-f"><option value="Comida">🍔 Comida</option><option value="Transporte">🚗 Transporte</option><option value="Entretenimiento">🎮 Entretenimiento</option><option value="Salud">❤️ Salud</option><option value="Educación">📚 Educación</option><option value="Ropa">👕 Ropa</option><option value="Casa">🏠 Casa</option><option value="Servicios">💡 Servicios</option><option value="Iglesia">⛪ Iglesia</option><option value="Negocios">💼 Negocios</option><option value="Ahorros">🐷 Ahorros</option><option value="Tarjeta de crédito">💳 Pago tarjeta crédito</option><option value="Otro">📦 Otro</option></select><button class="pb" id="ms5-sv">Guardar ✓</button></div>
+    <div class="ms" id="ms-6"><div style="font-size:18px;font-weight:600;margin-bottom:16px">¿A qué cuenta va el dinero?</div><div class="opt-l" id="ms6-o"></div></div>
+    <div class="ms" id="ms-7">
+      <div style="font-size:18px;font-weight:600;margin-bottom:6px">🔁 Detalle del recurrente</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Este pago se recordará mensualmente.</div>
+      <div class="fl">¿Qué tipo de pago es?</div>
+      <div class="opt-l" id="ms7-sub"></div>
+      <div class="fl" style="margin-top:14px">¿Qué día del mes?</div>
+      <input class="ti" id="ms7-day" type="number" min="1" max="31" placeholder="Ej: 20"/>
+      <div id="ms7-dest-wrap">
+        <div class="fl">¿A qué cuenta va / sale?</div>
+        <select class="si" id="ms7-acc"></select>
+      </div>
+      <button class="pb" id="ms7-nx">Guardar recurrente ✓</button>
+    </div>
+    <div class="ms" id="ms-ok"><div class="suc"><div style="font-size:56px;margin-bottom:16px">✅</div><div style="font-size:22px;font-weight:700;margin-bottom:8px">¡Registrado!</div><div style="font-size:14px;color:var(--text2)" id="ok-msg"></div></div></div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="ov" id="ctx-ov">
+  <div class="sheet">
+    <div class="hdl"></div>
+    <div class="ctx-p" id="ctx-prev"></div>
+    <div class="ctx-a">
+      <button class="ctx-b ctx-ed" id="ctx-ed">✏️ Editar</button>
+      <button class="ctx-b ctx-dl" id="ctx-dl">🗑️ Eliminar</button>
+    </div>
+    <button class="ctx-cn" onclick="closeOv('ctx-ov')">Cancelar</button>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="ov center" id="cf-ov">
+  <div class="cf-box">
+    <div style="font-size:40px;margin-bottom:12px">🗑️</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:8px">¿Eliminar registro?</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5" id="cf-sub"></div>
+    <div class="cf-btns"><button class="cf-c" onclick="closeOv('cf-ov')">Cancelar</button><button class="cf-o" id="cf-ok">Sí, eliminar</button></div>
+  </div>
+</div>
+
+<!-- EDIT -->
+<div class="ov" id="ed-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('ed-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sh-t">✏️ Editar registro</div>
+    <div class="fl">Descripción</div><input class="ti" id="ed-desc" type="text"/>
+    <div class="fl">Monto</div><input class="bi" id="ed-amt" type="text" inputmode="decimal" style="font-size:24px;margin-bottom:0"/>
+    <div class="fl">Moneda</div><div class="ctog"><button class="cb on" id="ed-dop">🇩🇴 DOP</button><button class="cb" id="ed-usd">🇺🇸 USD</button></div>
+    <div class="fl" id="ed-cat-l">Categoría</div><select class="si" id="ed-cat"><option value="Comida">🍔 Comida</option><option value="Transporte">🚗 Transporte</option><option value="Entretenimiento">🎮 Entretenimiento</option><option value="Salud">❤️ Salud</option><option value="Educación">📚 Educación</option><option value="Ropa">👕 Ropa</option><option value="Casa">🏠 Casa</option><option value="Servicios">💡 Servicios</option><option value="Iglesia">⛪ Iglesia</option><option value="Negocios">💼 Negocios</option><option value="Ahorros">🐷 Ahorros</option><option value="Tarjeta de crédito">💳 Pago tarjeta crédito</option><option value="Otro">📦 Otro</option></select>
+    <div class="fl">Cuenta</div><select class="si" id="ed-acc"></select>
+    <button class="pb" id="ed-sv">Guardar cambios ✓</button>
+  </div>
+</div>
+
+<!-- MANAGE ACCOUNTS -->
+<div class="ov" id="mg-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('mg-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sh-t">⚙️ Gestionar cuentas</div>
+    <div id="mg-list"></div>
+    <button class="pb" onclick="saveMgAccts()">Guardar cambios</button>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="ov" id="pf-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('pf-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sh-t">Mi perfil</div>
+    <div class="pf-card">
+      <div id="pf-av" style="width:64px;height:64px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 12px;overflow:hidden">?</div>
+      <div id="pf-name" style="font-size:18px;font-weight:600;margin-bottom:4px">—</div>
+      <div id="pf-email" style="font-size:13px;color:var(--text2)">—</div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:16px;line-height:1.6">☁️ Tus datos están guardados de forma privada.</div>
+    <button onclick="openCatConfig()" style="width:100%;padding:14px;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.25);border-radius:var(--rs);color:#a89dff;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px">⚙️ Configurar categorías</button>
+    <button onclick="openResetBalances()" style="width:100%;padding:14px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);border-radius:var(--rs);color:#f5c060;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px">💰 Actualizar saldos iniciales</button>
+    <button class="lo-btn" id="btn-lo">🚪 Cerrar sesión</button>
+  </div>
+</div>
+
+  <!-- Para cambiar logica: edita js/main.js -->
+  <script type="module" src="js/finanzas.js"></script>
+
+<!-- MANAGE RECURRINGS OVERLAY -->
+<div class="ov" id="rec-mg-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('rec-mg-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sh-t">🔁 Pagos recurrentes</div>
+    <div id="rec-manage-list"></div>
+    <button onclick="closeOv('rec-mg-ov')" style="width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--text2);font-size:14px;cursor:pointer;margin-top:8px">Cerrar</button>
+  </div>
+</div>
+
+<!-- CATEGORY CONFIG OVERLAY -->
+<div class="ov" id="cat-cfg-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('cat-cfg-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sh-t">⚙️ Configurar categorías</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">
+      Edita el límite mensual de cada categoría o agrega una nueva.
+    </div>
+    <div id="cat-cfg-list"></div>
+    <!-- Add new category -->
+    <div style="background:var(--bg3);border-radius:var(--rs);padding:14px;margin-top:8px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">➕ Nueva categoría</div>
+      <div class="fl">Nombre</div>
+      <input class="ti" id="cat-new-name" type="text" placeholder="Ej: Mascotas, Viajes..."/>
+      <div class="fl">Emoji</div>
+      <input class="ti" id="cat-new-emoji" type="text" placeholder="Ej: 🐾" maxlength="2" style="font-size:20px;text-align:center"/>
+      <div class="fl">Límite mensual (DOP, 0 = sin límite)</div>
+      <input class="ti" id="cat-new-limit" type="text" inputmode="decimal" placeholder="Ej: 3,000"/>
+      <button onclick="addCustomCategory()" style="width:100%;padding:12px;background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);border-radius:var(--rs);color:#a89dff;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px">+ Agregar categoría</button>
+    </div>
+    <button class="pb" onclick="saveCategoryConfig()" style="margin-top:12px">Guardar cambios ✓</button>
+  </div>
+</div>
+
+<!-- RESET BALANCES OVERLAY -->
+<div class="ov" id="reset-bal-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('reset-bal-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sh-t">💰 Saldos iniciales</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">
+      Actualiza el saldo actual de tus cuentas. La app recalculará todo desde aquí.
+    </div>
+    <div id="reset-bal-fields"></div>
+    <button class="pb" onclick="saveResetBalances()">Guardar saldos ✓</button>
+  </div>
+</div>
+</body>
+</html>

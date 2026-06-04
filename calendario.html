@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#0f0f13">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Calendario">
+  <title>Calendario 📅</title>
+  <link rel="stylesheet" href="css/shared.css">
+  <link rel="stylesheet" href="css/calendario.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- MAIN PAGE -->
+  <div class="page on" id="pg-cal">
+    <div class="hdr">
+      <div>
+        <div class="hdr-sub">Mi espacio personal</div>
+        <h1>Calendario 📅</h1>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <a href="index.html" class="back-link">← Hub</a>
+        <div class="av" id="user-av">?</div>
+      </div>
+    </div>
+
+    <!-- Calendar tabs -->
+    <div class="cal-tabs" id="cal-tabs">
+      <!-- Built dynamically -->
+      <button class="cal-tab-add" id="btn-add-cal" title="Nuevo calendario">＋</button>
+    </div>
+
+    <!-- Month navigation -->
+    <div class="cal-month-header">
+      <button class="cal-nav-btn" id="btn-prev-month">‹</button>
+      <div class="cal-month-title" id="month-title">—</div>
+      <button class="cal-nav-btn" id="btn-next-month">›</button>
+    </div>
+
+    <!-- Calendar grid -->
+    <div class="cal-grid" id="cal-grid">
+      <div class="cal-dow">Lu</div><div class="cal-dow">Ma</div><div class="cal-dow">Mi</div>
+      <div class="cal-dow">Ju</div><div class="cal-dow">Vi</div><div class="cal-dow">Sá</div><div class="cal-dow">Do</div>
+    </div>
+
+    <!-- Selected day detail -->
+    <div id="day-detail-wrap"></div>
+  </div>
+
+</div>
+
+<!-- NEW CALENDAR WIZARD -->
+<div class="ov" id="wizard-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('wizard-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sdots" id="wiz-dots"></div>
+    <div class="sh-t" id="wiz-title">Nuevo calendario</div>
+
+    <!-- Step 1: Type -->
+    <div class="wizard-step on" id="wiz-1">
+      <div class="wizard-q">¿Qué tipo de calendario quieres crear?</div>
+      <div class="wizard-sub">La IA te ayudará a configurarlo con sugerencias personalizadas.</div>
+      <div class="opt-l" id="wiz-type-opts"></div>
+    </div>
+
+    <!-- Step 2: Questions (dynamic per type) -->
+    <div class="wizard-step" id="wiz-2">
+      <div class="wizard-q" id="wiz-q-title"></div>
+      <div class="wizard-sub" id="wiz-q-sub"></div>
+      <div id="wiz-q-content"></div>
+      <button class="pb" id="wiz-next-2">Siguiente →</button>
+    </div>
+
+    <!-- Step 3: More questions -->
+    <div class="wizard-step" id="wiz-3">
+      <div class="wizard-q" id="wiz-q3-title"></div>
+      <div class="wizard-sub" id="wiz-q3-sub"></div>
+      <div id="wiz-q3-content"></div>
+      <button class="pb" id="wiz-next-3">Ver sugerencias de IA →</button>
+    </div>
+
+    <!-- Step 4: AI suggestions -->
+    <div class="wizard-step" id="wiz-4">
+      <div class="wizard-q">✨ Sugerencias de IA</div>
+      <div class="wizard-sub">Basado en tus respuestas, te recomiendo esto:</div>
+      <div id="wiz-ai-content">
+        <div class="ai-typing"><span></span><span></span><span></span></div>
+      </div>
+      <button class="pb" id="wiz-finish" style="display:none">Crear calendario con estas sugerencias ✓</button>
+      <button id="wiz-skip-ai" style="width:100%;padding:12px;background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;margin-top:8px">Crear sin sugerencias</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD EVENT MODAL -->
+<div class="ov" id="event-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('event-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sh-t" id="event-ov-title">Nuevo evento</div>
+    <div class="fl">Nombre</div>
+    <input class="ti" id="ev-name" type="text" placeholder="Ej: Cardio, Reunión, Pollo con arroz..."/>
+    <div class="fl">Hora (opcional)</div>
+    <input class="ti" id="ev-time" type="time"/>
+    <div class="fl">Notas (opcional)</div>
+    <input class="ti" id="ev-notes" type="text" placeholder="Detalles adicionales..."/>
+    <div class="fl">¿Se repite?</div>
+    <select class="si" id="ev-repeat">
+      <option value="none">No se repite</option>
+      <option value="weekly">Cada semana (mismo día)</option>
+      <option value="daily">Todos los días</option>
+      <option value="monthly">Cada mes (mismo día)</option>
+    </select>
+    <button class="pb" id="ev-save">Guardar evento ✓</button>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE CALENDAR -->
+<div class="ov center" id="del-cal-ov">
+  <div style="background:var(--bg2);border-radius:var(--r);padding:24px;width:100%;max-width:320px;text-align:center;border:1px solid var(--border)">
+    <div style="font-size:36px;margin-bottom:12px">🗑️</div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:8px">¿Eliminar este calendario?</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px" id="del-cal-sub"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onclick="closeOv('del-cal-ov')" style="padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);color:var(--text2);font-size:14px;font-weight:600;cursor:pointer">Cancelar</button>
+      <button id="del-cal-ok" style="padding:12px;background:rgba(255,77,77,.2);border:1px solid rgba(255,77,77,.4);border-radius:var(--rs);color:#ff8080;font-size:14px;font-weight:600;cursor:pointer">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/calendario.js"></script>
+</body>
+</html>

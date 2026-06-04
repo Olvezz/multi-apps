@@ -1,0 +1,42 @@
+/* shared.css — Variables y estilos comunes a toda la app */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f13;--bg2:#1a1a22;--bg3:#22222e;--bg4:#2a2a38;
+  --acc:#6c63ff;--green:#3dd68c;--amber:#f5a623;--red:#ff4d4d;
+  --text:#f0f0f8;--text2:#9999b8;--border:rgba(255,255,255,.08);
+  --r:16px;--rs:10px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:flex-end;justify-content:center}
+.ov.on{display:flex}.ov.center{align-items:center;padding:24px}
+.sheet{background:var(--bg2);border-radius:24px 24px 0 0;padding:24px 20px max(40px,env(safe-area-inset-bottom));width:100%;max-width:480px;border-top:1px solid var(--border);max-height:92vh;overflow-y:auto;position:relative}
+.sheet::-webkit-scrollbar{display:none}
+.hdl{width:40px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 20px}
+.sh-t{font-size:18px;font-weight:600;margin-bottom:20px;text-align:center}
+.cls{position:absolute;top:20px;right:20px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px;line-height:1;padding:4px}
+.pb{width:100%;background:var(--acc);border:none;border-radius:var(--rs);padding:16px;font-size:16px;font-weight:600;color:#fff;cursor:pointer;margin-top:16px}
+.pb:active{transform:scale(.98)}
+.ti{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;font-size:16px;color:var(--text);outline:none}
+.ti:focus{border-color:var(--acc)}
+.si{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;font-size:15px;color:var(--text);outline:none;-webkit-appearance:none}
+.si option{background:var(--bg2)}
+.fl{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-top:14px;margin-bottom:6px}
+.opt-l{display:flex;flex-direction:column;gap:8px}
+.opt-b{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;font-size:15px;color:var(--text);cursor:pointer;text-align:left;width:100%;transition:all .15s}
+.opt-b:active,.opt-b.sel{border-color:var(--acc);background:rgba(108,99,255,.1);color:var(--acc)}
+.cb{flex:1;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);color:var(--text2);cursor:pointer;font-size:14px;font-weight:500}
+.cb.on{background:rgba(108,99,255,.15);border-color:var(--acc);color:var(--acc)}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 max(14px,env(safe-area-inset-bottom))}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--text2);font-size:10px;padding:4px 14px;border:none;background:none;transition:color .15s;position:relative}
+.ni.on{color:var(--acc)}.ni .ico{font-size:20px;line-height:1}
+.spinner{width:44px;height:44px;border:3px solid var(--bg3);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:14px;line-height:2.2}
+.tag{display:inline-flex;font-size:11px;padding:2px 7px;border-radius:20px;background:var(--bg3);color:var(--text2)}
+.ob-c{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;cursor:pointer;transition:all .15s}
+.ob-c.on{border-color:var(--acc);background:rgba(108,99,255,.1)}
+.ob-ci{font-size:20px;flex-shrink:0}.ob-cl2{font-size:14px;font-weight:500;flex:1}
+.ob-cm{font-size:18px;opacity:0;transition:opacity .2s}.ob-c.on .ob-cm{opacity:1}
+.g-btn{display:flex;align-items:center;gap:12px;background:#fff;color:#111;border:none;border-radius:var(--rs);padding:14px 24px;font-size:16px;font-weight:600;cursor:pointer;width:100%;max-width:320px;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:transform .15s}
+.g-btn:active{transform:scale(.97)}
