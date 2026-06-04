@@ -454,75 +454,122 @@ async function runAI() {
 
   const typeInfo = CAL_TYPES.find(t => t.val === wizState.type);
   const prompt = buildAIPrompt();
+  const systemPrompt = `Eres un asistente experto en planificación personal. El usuario está configurando un calendario de tipo "${typeInfo?.label}". 
+Responde SOLO en JSON con este formato exacto, sin markdown ni texto extra:
+{"intro":"Frase motivadora de 1-2 oraciones","suggestions":[{"name":"Nombre del evento","time":"HH:MM o null","notes":"detalle o null","repeat":"weekly/daily/none"}]}
+Genera entre 5 y 8 sugerencias concretas y personalizadas.`;
+
+  // Use allorigins CORS proxy to reach Anthropic API
+  const apiUrl = 'https://api.anthropic.com/v1/messages';
+  const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+    const res = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:`Eres un asistente experto en planificación personal. El usuario está configurando un calendario de tipo "${typeInfo?.label}". 
-Responde SOLO en JSON con este formato exacto, sin markdown ni texto extra:
-{
-  "intro": "Frase motivadora de 1-2 oraciones basada en sus respuestas",
-  "suggestions": [
-    {"name": "Nombre del evento/tarea", "time": "HH:MM o null", "notes": "detalle breve o null", "repeat": "weekly/daily/none"},
-    ...
-  ]
-}
-Genera entre 5 y 8 sugerencias concretas, prácticas y personalizadas. Para gimnasio incluye ejercicios específicos. Para cocina incluye recetas reales. Para trabajo incluye tareas concretas.`,
-        messages:[{ role:'user', content: prompt }]
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
 
+    if(!res.ok) throw new Error('API error: ' + res.status);
     const data = await res.json();
     const text = data.content?.map(i => i.text||'').join('') || '';
     const clean = text.replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
-
-    ct.innerHTML = '';
-
-    // Intro bubble
-    const bubble = document.createElement('div');
-    bubble.className = 'ai-bubble';
-    bubble.innerHTML = `<p>✨ ${parsed.intro}</p>`;
-    ct.appendChild(bubble);
-
-    // Suggestions
-    const sugTitle = document.createElement('div');
-    sugTitle.style.cssText = 'font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:16px';
-    sugTitle.textContent = 'Eventos sugeridos';
-    ct.appendChild(sugTitle);
-
-    (parsed.suggestions || []).forEach(sug => {
-      const card = document.createElement('div');
-      card.className = 'suggestion-card';
-      card.dataset.name = sug.name;
-      card.dataset.time = sug.time || '';
-      card.dataset.notes = sug.notes || '';
-      card.dataset.repeat = sug.repeat || 'none';
-      const color = calColor(wizState.type);
-      card.innerHTML = `
-        <div class="sug-ico" style="color:${color}">${typeInfo?.label.split(' ')[0]||'📅'}</div>
-        <div class="sug-info">
-          <div class="sug-name">${sug.name}</div>
-          <div class="sug-detail">${sug.time||'Sin hora'} ${sug.notes?'· '+sug.notes:''} ${sug.repeat&&sug.repeat!=='none'?'· 🔁':''}</div>
-        </div>
-        <button class="sug-add" onclick="removeSuggestion(this)">✓ Incluir</button>`;
-      ct.appendChild(card);
-    });
-
-    finBtn.style.display = 'block';
+    renderAISuggestions(parsed, typeInfo);
 
   } catch(e) {
-    ct.innerHTML = `<div class="ai-bubble"><p>No se pudo conectar con la IA. Puedes crear el calendario sin sugerencias.</p></div>`;
-    finBtn.style.display = 'none';
-    console.error(e);
+    // Fallback: generate suggestions locally based on type and answers
+    console.warn('AI API failed, using local suggestions:', e);
+    const parsed = generateLocalSuggestions(wizState.type, wizState.q2ans, wizState.q3ans);
+    renderAISuggestions(parsed, typeInfo);
   }
+}
+
+function generateLocalSuggestions(type, q2, q3) {
+  const suggestions = {
+    gym: [
+      {name:'Calentamiento 10 min', time:'07:00', notes:'Movilidad articular', repeat:'weekly'},
+      {name:'Press de banca', time:'07:10', notes:'4 series x 10 reps', repeat:'weekly'},
+      {name:'Sentadillas', time:'07:30', notes:'4 series x 12 reps', repeat:'weekly'},
+      {name:'Peso muerto', time:'07:50', notes:'3 series x 8 reps', repeat:'weekly'},
+      {name:'Cardio 20 min', time:'08:10', notes:'Caminata inclinada o bicicleta', repeat:'weekly'},
+      {name:'Abdominales', time:'08:35', notes:'3 series x 20 reps', repeat:'weekly'},
+    ],
+    work: [
+      {name:'Revisar correos', time:'08:00', notes:'Priorizar urgentes', repeat:'daily'},
+      {name:'Bloque de trabajo profundo', time:'09:00', notes:'Sin distracciones 90 min', repeat:'daily'},
+      {name:'Reunión de equipo', time:'10:30', notes:'Revisión semanal', repeat:'weekly'},
+      {name:'Planificación del día siguiente', time:'17:00', notes:'Lista de tareas', repeat:'daily'},
+      {name:'Revisión de metas semanales', time:'17:30', notes:'Viernes', repeat:'weekly'},
+    ],
+    cook: [
+      {name:'Pollo al horno con vegetales', time:'12:00', notes:'Para 2 personas', repeat:'weekly'},
+      {name:'Arroz con habichuelas', time:'12:00', notes:'Tradicional dominicano', repeat:'weekly'},
+      {name:'Ensalada fresca', time:'12:30', notes:'Lechuga, tomate, aguacate', repeat:'daily'},
+      {name:'Sancocho', time:'11:00', notes:'Para el fin de semana', repeat:'weekly'},
+      {name:'Preparar meriendas', time:'08:00', notes:'Fruta y yogur', repeat:'daily'},
+    ],
+    shop: [
+      {name:'Compra semanal supermercado', time:'10:00', notes:'Lista completa', repeat:'weekly'},
+      {name:'Revisar despensa', time:'09:00', notes:'Antes de ir a comprar', repeat:'weekly'},
+      {name:'Frutas y verduras frescas', time:'10:30', notes:'Mercado o colmado', repeat:'weekly'},
+    ],
+    gen: [
+      {name:'Revisión semanal personal', time:'09:00', notes:'Domingos', repeat:'weekly'},
+      {name:'Llamar a familia', time:'18:00', notes:'Fin de semana', repeat:'weekly'},
+      {name:'Ejercicio 30 min', time:'07:00', notes:'Mañanas', repeat:'daily'},
+      {name:'Lectura antes de dormir', time:'21:30', notes:'20-30 minutos', repeat:'daily'},
+    ]
+  };
+  const intros = {
+    gym: 'Con constancia y disciplina lograrás tus metas. Aquí tienes una rutina para empezar.',
+    work: 'La productividad es cuestión de hábitos. Estos bloques te ayudarán a organizarte mejor.',
+    cook: 'Comer bien en casa es más fácil cuando tienes un plan. Aquí van algunas ideas.',
+    shop: 'Una lista organizada te ahorra tiempo y dinero. Aquí tienes un punto de partida.',
+    gen: 'Organizar tu tiempo es el primer paso hacia una vida más equilibrada.'
+  };
+  return { intro: intros[type]||'Aquí tienes algunas sugerencias para empezar.', suggestions: suggestions[type]||[] };
+}
+
+function renderAISuggestions(parsed, typeInfo) {
+  const ct = document.getElementById('wiz-ai-content');
+  const finBtn = document.getElementById('wiz-finish');
+  ct.innerHTML = '';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'ai-bubble';
+  bubble.innerHTML = `<p>✨ ${parsed.intro}</p>`;
+  ct.appendChild(bubble);
+
+  const sugTitle = document.createElement('div');
+  sugTitle.style.cssText = 'font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:16px';
+  sugTitle.textContent = 'Eventos sugeridos';
+  ct.appendChild(sugTitle);
+
+  const color = calColor(wizState.type);
+  (parsed.suggestions||[]).forEach(sug => {
+    const card = document.createElement('div');
+    card.className = 'suggestion-card';
+    card.dataset.name = sug.name;
+    card.dataset.time = sug.time||'';
+    card.dataset.notes = sug.notes||'';
+    card.dataset.repeat = sug.repeat||'none';
+    card.innerHTML = `
+      <div class="sug-ico" style="color:${color}">${typeInfo?.label.split(' ')[0]||'📅'}</div>
+      <div class="sug-info">
+        <div class="sug-name">${sug.name}</div>
+        <div class="sug-detail">${sug.time&&sug.time!=='null'?sug.time:'Sin hora'}${sug.notes&&sug.notes!=='null'?' · '+sug.notes:''}${sug.repeat&&sug.repeat!=='none'?' · 🔁':''}</div>
+      </div>
+      <button class="sug-add" onclick="removeSuggestion(this)">✓ Incluir</button>`;
+    ct.appendChild(card);
+  });
+
+  finBtn.style.display = 'block';
 }
 
 window.removeSuggestion = function(btn) {
