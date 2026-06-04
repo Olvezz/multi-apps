@@ -57,7 +57,7 @@ let calendars = [];   // [{id, name, type, color, cls, bgcls, events:{}}]
 let activeCalId = null;
 let currentDate = new Date();
 let selectedDate = null;
-let wizState = { type:null, q2ans:null, q3ans:[], step:1 };
+let wizState = { type:null, q2ans:[], q3ans:[], days:[], timeSlot:'', step:1, title:'' };
 let addEventDate = null;
 let delCalTarget = null;
 
@@ -281,17 +281,17 @@ function renderDayDetail(date) {
   } else {
     allEvents.forEach((ev, i) => {
       const isDone = ev.done;
-      html += `<div class="event-item">
+      html += `<div class="event-item" style="cursor:pointer" onclick="openEditEvent('${key}',${i})">
         <div class="event-color" style="background:${color}"></div>
         <div class="event-info">
           <div class="event-name" style="${isDone?'text-decoration:line-through;opacity:.5':''}">${ev.name}</div>
           ${ev.time ? `<div class="event-time">🕐 ${ev.time}${ev.repeat&&ev.repeat!=='none'?' · 🔁':''}</div>` : ''}
           ${ev.notes ? `<div class="event-time">📝 ${ev.notes}</div>` : ''}
         </div>
-        <div class="event-check ${isDone?'done':''}" onclick="toggleEventDone('${key}',${i})">
+        <div class="event-check ${isDone?'done':''}" onclick="event.stopPropagation();toggleEventDone('${key}',${i})">
           ${isDone?'✓':''}
         </div>
-        <button class="event-del" onclick="deleteEvent('${key}',${i})">🗑️</button>
+        <button class="event-del" onclick="event.stopPropagation();deleteEvent('${key}',${i})">🗑️</button>
       </div>`;
     });
   }
@@ -346,6 +346,42 @@ window.deleteEvent = async (key, idx) => {
   await saveCalendar(cal);
 };
 
+let editEvKey = null, editEvIdx = null;
+
+window.openEditEvent = function(key, idx) {
+  const cal = getActiveCal();
+  if(!cal?.events?.[key]?.[idx]) return;
+  const ev = cal.events[key][idx];
+  editEvKey = key; editEvIdx = idx;
+  document.getElementById('edit-ev-name').value = ev.name||'';
+  document.getElementById('edit-ev-time').value = ev.time||'';
+  document.getElementById('edit-ev-notes').value = ev.notes||'';
+  document.getElementById('edit-ev-repeat').value = ev.repeat||'none';
+  openOv('edit-ev-ov');
+};
+
+document.getElementById('edit-ev-save').onclick = async () => {
+  const cal = getActiveCal();
+  if(!cal?.events?.[editEvKey]?.[editEvIdx] === undefined) return;
+  cal.events[editEvKey][editEvIdx] = {
+    ...cal.events[editEvKey][editEvIdx],
+    name: document.getElementById('edit-ev-name').value.trim(),
+    time: document.getElementById('edit-ev-time').value||null,
+    notes: document.getElementById('edit-ev-notes').value.trim()||null,
+    repeat: document.getElementById('edit-ev-repeat').value,
+  };
+  await saveCalendar(cal);
+  closeOv('edit-ev-ov');
+};
+
+document.getElementById('edit-ev-del').onclick = async () => {
+  const cal = getActiveCal();
+  if(!cal?.events?.[editEvKey]) return;
+  cal.events[editEvKey].splice(editEvIdx, 1);
+  await saveCalendar(cal);
+  closeOv('edit-ev-ov');
+};
+
 // ─── WIZARD ────────────────────────────────────────────────────────────────
 document.getElementById('btn-add-cal').onclick = () => {
   wizState = { type:null, q2ans:null, q3ans:[], step:1 };
@@ -360,12 +396,32 @@ document.getElementById('btn-add-cal').onclick = () => {
 function buildWizTypeOpts() {
   const ct = document.getElementById('wiz-type-opts');
   ct.innerHTML = '';
+
+  // Title input for custom name
+  const titleWrap = document.createElement('div');
+  titleWrap.innerHTML = `<div style="font-size:13px;color:var(--text2);margin-bottom:8px">Nombre del calendario (opcional)</div>
+    <input class="ti" id="wiz-title-inp" type="text" placeholder="Ej: Gimnasio, Mi trabajo, Menú semanal..." style="margin-bottom:16px"/>`;
+  ct.appendChild(titleWrap);
+  setTimeout(()=>{
+    const inp = document.getElementById('wiz-title-inp');
+    if(inp) inp.oninput = () => { wizState.title = inp.value.trim(); };
+  }, 50);
+
+  // Type options
+  const typeLabel = document.createElement('div');
+  typeLabel.style.cssText = 'font-size:13px;color:var(--text2);margin-bottom:8px';
+  typeLabel.textContent = 'Tipo de calendario';
+  ct.appendChild(typeLabel);
+
   CAL_TYPES.forEach(t => {
     const b = document.createElement('button');
     b.className = 'opt-b';
     b.textContent = t.label;
     b.onclick = () => {
       wizState.type = t.val;
+      const titleInp = document.getElementById('wiz-title-inp');
+      if(titleInp?.value.trim()) wizState.title = titleInp.value.trim();
+      else wizState.title = t.label.split(' ').slice(1).join(' ');
       goWizStep(2);
     };
     ct.appendChild(b);
@@ -442,8 +498,13 @@ document.getElementById('wiz-next-2').onclick = () => goWizStep(3);
 document.getElementById('wiz-next-3').onclick = () => goWizStep(4);
 document.getElementById('wiz-skip-ai').onclick = () => finishWizard([]);
 document.getElementById('wiz-finish').onclick = () => {
-  const suggestions = [...document.querySelectorAll('.sug-card:not(.applied)')];
-  finishWizard(suggestions.map(s => ({ name: s.dataset.name, time: s.dataset.time||null, notes: s.dataset.notes||null })));
+  const included = [...document.querySelectorAll('.suggestion-card:not(.applied)')];
+  finishWizard(included.map(s => ({
+    name: s.dataset.name,
+    time: s.dataset.time||null,
+    notes: s.dataset.notes||null,
+    repeat: s.dataset.repeat||'none'
+  })));
 };
 
 async function runAI() {
@@ -581,50 +642,84 @@ window.removeSuggestion = function(btn) {
 function buildAIPrompt() {
   const typeInfo = CAL_TYPES.find(t => t.val === wizState.type);
   const q = WIZARD_QUESTIONS[wizState.type];
+  const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const days = (wizState.q2ans||[]).filter(a => DAY_NAMES.includes(a));
+  const prefs = [...(wizState.q2ans||[]),...(wizState.q3ans||[])].filter(a => !DAY_NAMES.includes(a));
   let prompt = `Tipo de calendario: ${typeInfo?.label}\n`;
-  if(q?.q2 && wizState.q2ans) prompt += `${q.q2.title}: ${Array.isArray(wizState.q2ans) ? wizState.q2ans.join(', ') : wizState.q2ans}\n`;
-  if(q?.q3 && wizState.q3ans?.length) prompt += `${q.q3.title}: ${wizState.q3ans.join(', ')}\n`;
-  prompt += 'Por favor sugiere eventos/tareas/rutinas concretas y personalizadas para este calendario.';
+  if(wizState.title) prompt += `Nombre del calendario: ${wizState.title}\n`;
+  if(days.length) prompt += `Días disponibles: ${days.join(', ')}\n`;
+  if(prefs.length) prompt += `Preferencias: ${prefs.join(', ')}\n`;
+  prompt += `Genera sugerencias concretas con horarios específicos basados en los días y preferencias indicados. Si son días de gimnasio, incluye ejercicios reales. Si es cocina, incluye recetas reales. Asigna horarios coherentes con las preferencias.`;
   return prompt;
 }
 
 async function finishWizard(suggestions) {
   const typeInfo = CAL_TYPES.find(t => t.val === wizState.type);
-  const calName = typeInfo?.label.split(' ').slice(1).join(' ') || 'Mi calendario';
+  const calName = wizState.title || typeInfo?.label.split(' ').slice(1).join(' ') || 'Mi calendario';
   const calId = 'cal_' + Date.now();
-
-  // Build events object from suggestions (add to today and recurring days)
   const events = {};
-  const today = dateKey(new Date());
 
-  suggestions.forEach((sug, i) => {
-    const card = document.querySelector(`.suggestion-card:not(.applied)[data-name="${sug.name}"]`) ||
-                 { dataset: sug };
-    const ev = {
-      name: sug.name || card.dataset?.name,
-      time: sug.time || card.dataset?.time || null,
-      notes: sug.notes || card.dataset?.notes || null,
-      repeat: card.dataset?.repeat || 'none',
-      date: today,
-      done: false
-    };
-    if(!ev.name) return;
-    if(!events[today]) events[today] = [];
-    events[today].push(ev);
+  // Extract days and time from wizard answers
+  const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const selectedDays = (wizState.q2ans||[]).filter(a => DAY_NAMES.includes(a));
+  const timeHints = (wizState.q3ans||[]).filter(a => a.includes('am')||a.includes('pm'));
+  let defaultTime = null;
+  if(timeHints.length) {
+    if(timeHints[0].includes('6-9')||timeHints[0].includes('7-9')||timeHints[0].includes('8-12')) defaultTime='07:00';
+    else if(timeHints[0].includes('12-2')||timeHints[0].includes('1-5')) defaultTime='12:00';
+    else if(timeHints[0].includes('5-8')||timeHints[0].includes('6-8')||timeHints[0].includes('6-10')) defaultTime='18:00';
+  }
+
+  // Add suggestions to the next 4 weeks on selected days
+  const now = new Date();
+  suggestions.forEach((sug, idx) => {
+    const name = sug.name || sug.dataset?.name;
+    const time = (sug.time&&sug.time!=='null') ? sug.time : (defaultTime||(sug.dataset?.time||null));
+    const notes = (sug.notes&&sug.notes!=='null') ? sug.notes : (sug.dataset?.notes||null);
+    const repeat = sug.repeat || sug.dataset?.repeat || (selectedDays.length?'weekly':'none');
+    if(!name) return;
+
+    // Determine which date to assign this event
+    let targetDate = new Date(now);
+    if(selectedDays.length) {
+      // Find the next occurrence of a selected day
+      const dayIdx = idx % selectedDays.length;
+      const targetDow = DAY_NAMES.indexOf(selectedDays[dayIdx]);
+      let d = new Date(now);
+      for(let i=0;i<7;i++) {
+        if(d.getDay()===targetDow) break;
+        d.setDate(d.getDate()+1);
+      }
+      targetDate = d;
+    }
+
+    const key = dateKey(targetDate);
+    const ev = { name, time, notes, repeat, date:key, done:false };
+    if(!events[key]) events[key] = [];
+    events[key].push(ev);
   });
 
+  // If no suggestions, create empty calendar
   const newCal = {
     id: calId,
     name: calName,
     type: wizState.type,
     color: calColor(wizState.type),
     createdAt: new Date().toISOString(),
+    wizardAnswers: { q2: wizState.q2ans, q3: wizState.q3ans },
     events
   };
 
   await setDoc(doc(db, 'users', user.uid, 'calendars', calId), newCal);
   activeCalId = calId;
   closeOv('wizard-ov');
+  // Navigate to first event date if exists
+  if(Object.keys(events).length) {
+    const firstKey = Object.keys(events).sort()[0];
+    const parts = firstKey.split('-');
+    currentDate = new Date(parseInt(parts[0]), parseInt(parts[1])-1, 1);
+    selectedDate = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+  }
 }
 
 // ─── KEYBOARD ─────────────────────────────────────────────────────────────

@@ -40,14 +40,19 @@
       <button class="cal-nav-btn" id="btn-next-month">›</button>
     </div>
 
-    <!-- Calendar grid -->
-    <div class="cal-grid" id="cal-grid">
-      <div class="cal-dow">Lu</div><div class="cal-dow">Ma</div><div class="cal-dow">Mi</div>
-      <div class="cal-dow">Ju</div><div class="cal-dow">Vi</div><div class="cal-dow">Sá</div><div class="cal-dow">Do</div>
+    <div class="desktop-layout">
+      <div class="cal-main-col">
+        <!-- Calendar grid -->
+        <div class="cal-grid" id="cal-grid">
+          <div class="cal-dow">Lu</div><div class="cal-dow">Ma</div><div class="cal-dow">Mi</div>
+          <div class="cal-dow">Ju</div><div class="cal-dow">Vi</div><div class="cal-dow">Sá</div><div class="cal-dow">Do</div>
+        </div>
+      </div>
+      <div class="cal-detail-col">
+        <!-- Selected day detail -->
+        <div id="day-detail-wrap"><div class="empty" style="padding:40px 20px">📅<br>Toca un día para ver sus eventos</div></div>
+      </div>
     </div>
-
-    <!-- Selected day detail -->
-    <div id="day-detail-wrap"></div>
   </div>
 
 </div>
@@ -133,5 +138,29 @@
 </div>
 
 <script type="module" src="js/calendario.js"></script>
+
+<!-- EDIT EVENT MODAL -->
+<div class="ov" id="edit-ev-ov">
+  <div class="sheet">
+    <button class="cls" onclick="closeOv('edit-ev-ov')">✕</button>
+    <div class="hdl"></div>
+    <div class="sh-t">✏️ Editar evento</div>
+    <div class="fl">Nombre</div>
+    <input class="ti" id="edit-ev-name" type="text"/>
+    <div class="fl">Hora (opcional)</div>
+    <input class="ti" id="edit-ev-time" type="time"/>
+    <div class="fl">Notas (opcional)</div>
+    <input class="ti" id="edit-ev-notes" type="text"/>
+    <div class="fl">¿Se repite?</div>
+    <select class="si" id="edit-ev-repeat">
+      <option value="none">No se repite</option>
+      <option value="weekly">Cada semana</option>
+      <option value="daily">Todos los días</option>
+      <option value="monthly">Cada mes</option>
+    </select>
+    <button class="pb" id="edit-ev-save">Guardar cambios ✓</button>
+    <button id="edit-ev-del" style="width:100%;padding:12px;background:rgba(255,77,77,.12);border:1px solid rgba(255,77,77,.25);border-radius:var(--rs);color:#ff8080;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px">🗑️ Eliminar evento</button>
+  </div>
+</div>
 </body>
 </html>

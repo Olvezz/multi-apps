@@ -148,7 +148,12 @@ document.getElementById('btn-google').onclick=async()=>{
   else{document.getElementById('login-err').textContent=e.message;document.getElementById('login-err').style.display='block';}}
 };
 getRedirectResult(auth).catch(()=>{});
-document.getElementById('btn-lo').onclick=async()=>{closeOv('pf-ov');if(unsub)unsub();await signOut(auth);};
+document.getElementById('btn-lo').onclick=async()=>{
+  closeOv('pf-ov');
+  if(unsub)unsub();
+  await signOut(auth);
+  window.location.href='index.html';
+};
 
 onAuthStateChanged(auth,async u=>{
   if(u){
@@ -163,9 +168,7 @@ onAuthStateChanged(auth,async u=>{
     else{initOb();showPage('pg-ob');}
   } else {
     user=null;txs=[];if(unsub){unsub();unsub=null;}
-    document.getElementById('bnav').style.display='none';
-    document.querySelectorAll('.page').forEach(p=>{p.classList.remove('on');});
-    document.getElementById('pg-login').classList.add('on');
+    window.location.href='index.html';
   }
 });
 

@@ -82,3 +82,26 @@
 /* Calendar type colors */
 .col-gym{color:#ff6584}.col-work{color:#6c63ff}.col-cook{color:#f5a623}.col-shop{color:#3dd68c}.col-gen{color:#9999b8}
 .bg-gym{background:#ff6584}.bg-work{background:#6c63ff}.bg-cook{background:#f5a623}.bg-shop{background:#3dd68c}.bg-gen{background:#9999b8}
+
+/* ── RESPONSIVE ────────────────────────────────────────────────────────────── */
+@media (min-width: 600px) {
+  #app { max-width: 100%; }
+  .page { max-width: 900px; margin: 0 auto; padding: 28px 32px 100px; }
+  .cal-grid { gap: 4px; }
+  .cal-day { border-radius: 10px; padding: 6px 4px; }
+  .cal-day-num { font-size: 15px; }
+  .cal-day.today .cal-day-num { width: 30px; height: 30px; }
+  .cal-tab { font-size: 14px; padding: 12px 18px; }
+  .cal-month-title { font-size: 22px; }
+  .cal-nav-btn { padding: 10px 16px; font-size: 18px; }
+  .day-detail { padding: 20px; }
+  .event-name { font-size: 15px; }
+  /* Two-column layout on desktop */
+  .desktop-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+  .cal-main-col { } 
+  .cal-detail-col { position: sticky; top: 20px; }
+}
+@media (min-width: 900px) {
+  .page { padding: 32px 48px 100px; }
+  .desktop-layout { grid-template-columns: 1fr 400px; gap: 32px; }
+}
