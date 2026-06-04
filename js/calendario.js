@@ -1,14 +1,14 @@
 // calendario.js — Reescrito limpio desde cero
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB = initializeApp({apiKey:"AIzaSyDjA2H9b6Ec7CUpUppQGFcacJRtDVrYz74",authDomain:"olvezz-finanzas.firebaseapp.com",projectId:"olvezz-finanzas",storageBucket:"olvezz-finanzas.firebasestorage.app",messagingSenderId:"16267383608",appId:"1:16267383608:web:17f5dd9180f26ea7d067cd"});
 const auth=getAuth(FB), db=getFirestore(FB);
 
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DOW=['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+const DOW=['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
 const DAY_NAMES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
 const CAL_TYPES=[
@@ -105,6 +105,9 @@ onAuthStateChanged(auth,u=>{
     user=u;
     const av=document.getElementById('user-av');
     if(av) av.innerHTML=u.photoURL?`<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover">`:(u.displayName?.[0]?.toUpperCase()||'?');
+    // Wire logout button if present
+    const loBtn=document.getElementById('cal-lo-btn');
+    if(loBtn) loBtn.onclick=async()=>{ if(unsub)unsub(); await signOut(auth); window.location.href='index.html'; };
     listenCalendars();
   } else { window.location.href='index.html'; }
 });
@@ -167,7 +170,7 @@ function renderMonth(){
   if(!grid)return;
   while(grid.children.length>7)grid.removeChild(grid.lastChild);
   const yr=currentDate.getFullYear(),mo=currentDate.getMonth();
-  const firstDow=(new Date(yr,mo,1).getDay()+6)%7;
+  const firstDow=new Date(yr,mo,1).getDay(); // 0=Sun, 1=Mon...
   const lastD=new Date(yr,mo+1,0).getDate();
   const todayKey=dateKey(new Date()),selKey=dateKey(selectedDate);
   const cal=getActiveCal(),events=cal?.events||{};
@@ -216,7 +219,7 @@ function renderDayDetail(date){
   const cal=getActiveCal();
   if(!cal){wrap.innerHTML='<div class="empty">📅<br>Crea un calendario primero tocando +</div>';return;}
   const key=dateKey(date),color=calColor(cal.type);
-  const dayLabel=`${DOW[(date.getDay()+6)%7]}, ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
+  const dayLabel=`${DOW[date.getDay()]}, ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
   const evs=getEventsForDate(date,cal.events||{});
   let html=`<div class="day-detail"><div class="day-detail-header"><div class="day-detail-title">${dayLabel}</div><button class="day-add-btn" onclick="openAddEvent('${key}')">+ Evento</button></div>`;
   if(!evs.length){html+=`<div style="text-align:center;padding:20px;color:var(--text2);font-size:14px">Sin eventos · toca + para agregar</div>`;}
