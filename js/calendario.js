@@ -69,9 +69,7 @@ function dateKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padSta
 
 function getActiveCal() { return calendars.find(c => c.id === activeCalId); }
 
-function calColor(type) { return CAL_TYPES.find(t => t.val === type)?.color || '#9999b8'; }
-function calCls(type)   { return CAL_TYPES.find(t => t.val === type)?.cls   || 'col-gen'; }
-function calBgcls(type) { return CAL_TYPES.find(t => t.val === type)?.bgcls || 'bg-gen'; }
+// calColor/calCls/calBgcls defined above with CAL_TYPES
 
 // ─── AUTH ──────────────────────────────────────────────────────────────────
 getRedirectResult(auth).catch(()=>{});
@@ -413,18 +411,35 @@ function buildWizTypeOpts() {
   typeLabel.textContent = 'Tipo de calendario';
   ct.appendChild(typeLabel);
 
+  // Group types
+  const groups = {};
   CAL_TYPES.forEach(t => {
-    const b = document.createElement('button');
-    b.className = 'opt-b';
-    b.textContent = t.label;
-    b.onclick = () => {
-      wizState.type = t.val;
-      const titleInp = document.getElementById('wiz-title-inp');
-      if(titleInp?.value.trim()) wizState.title = titleInp.value.trim();
-      else wizState.title = t.label.split(' ').slice(1).join(' ');
-      goWizStep(2);
-    };
-    ct.appendChild(b);
+    if(!groups[t.group]) groups[t.group] = [];
+    groups[t.group].push(t);
+  });
+  Object.entries(groups).forEach(([grp, types]) => {
+    const grpHdr = document.createElement('div');
+    grpHdr.style.cssText = 'font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:12px 0 6px;font-weight:600';
+    grpHdr.textContent = grp;
+    ct.appendChild(grpHdr);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px';
+    types.forEach(t => {
+      const b = document.createElement('button');
+      b.style.cssText = `padding:8px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-size:14px;cursor:pointer;color:var(--text);transition:all .15s;border-left:3px solid ${t.color}`;
+      b.textContent = t.label;
+      b.onmouseover = () => { b.style.background='var(--bg4)'; };
+      b.onmouseout = () => { b.style.background='var(--bg3)'; };
+      b.onclick = () => {
+        wizState.type = t.val;
+        const titleInp = document.getElementById('wiz-title-inp');
+        if(titleInp?.value.trim()) wizState.title = titleInp.value.trim();
+        else wizState.title = t.label.split(' ').slice(1).join(' ');
+        goWizStep(2);
+      };
+      row.appendChild(b);
+    });
+    ct.appendChild(row);
   });
 }
 
@@ -496,7 +511,10 @@ function buildWizQ(stepNum) {
 
 document.getElementById('wiz-next-2').onclick = () => goWizStep(3);
 document.getElementById('wiz-next-3').onclick = () => goWizStep(4);
-document.getElementById('wiz-skip-ai').onclick = () => finishWizard([]);
+document.getElementById('wiz-skip-ai').onclick = async () => {
+  closeOv('wizard-ov');
+  await finishWizard([]);
+};
 document.getElementById('wiz-finish').onclick = () => {
   const included = [...document.querySelectorAll('.suggestion-card:not(.applied)')];
   finishWizard(included.map(s => ({
@@ -594,7 +612,17 @@ function generateLocalSuggestions(type, q2, q3) {
     shop: 'Una lista organizada te ahorra tiempo y dinero. Aquí tienes un punto de partida.',
     gen: 'Organizar tu tiempo es el primer paso hacia una vida más equilibrada.'
   };
-  return { intro: intros[type]||'Aquí tienes algunas sugerencias para empezar.', suggestions: suggestions[type]||[] };
+  // Generic suggestions for types not explicitly defined
+  const genericSugs = [
+    {name:'Revisar tareas pendientes', time:'09:00', notes:'Lista del día', repeat:'daily'},
+    {name:'Bloque de trabajo', time:'10:00', notes:'90 minutos de foco', repeat:'weekly'},
+    {name:'Revisión semanal', time:'09:00', notes:'Domingos', repeat:'weekly'},
+    {name:'Meta de la semana', time:'08:00', notes:'Lunes', repeat:'weekly'},
+  ];
+  return {
+    intro: intros[type] || 'Aquí tienes algunas sugerencias para organizar tu calendario.',
+    suggestions: suggestions[type] || genericSugs
+  };
 }
 
 function renderAISuggestions(parsed, typeInfo) {
@@ -643,12 +671,14 @@ function buildAIPrompt() {
   const typeInfo = CAL_TYPES.find(t => t.val === wizState.type);
   const q = WIZARD_QUESTIONS[wizState.type];
   const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const days = (wizState.q2ans||[]).filter(a => DAY_NAMES.includes(a));
-  const prefs = [...(wizState.q2ans||[]),...(wizState.q3ans||[])].filter(a => !DAY_NAMES.includes(a));
+  const q2arr = Array.isArray(wizState.q2ans) ? wizState.q2ans : (wizState.q2ans ? [wizState.q2ans] : []);
+  const q3arr = Array.isArray(wizState.q3ans) ? wizState.q3ans : (wizState.q3ans ? [wizState.q3ans] : []);
+  const days = q2arr.filter(a => DAY_NAMES.includes(a));
+  const prefs = [...q2arr,...q3arr].filter(a => !DAY_NAMES.includes(a));
   let prompt = `Tipo de calendario: ${typeInfo?.label}\n`;
   if(wizState.title) prompt += `Nombre del calendario: ${wizState.title}\n`;
   if(days.length) prompt += `Días disponibles: ${days.join(', ')}\n`;
-  if(prefs.length) prompt += `Preferencias: ${prefs.join(', ')}\n`;
+  if(prefs.length) prompt += `Preferencias y horario: ${prefs.join(', ')}\n`;
   prompt += `Genera sugerencias concretas con horarios específicos basados en los días y preferencias indicados. Si son días de gimnasio, incluye ejercicios reales. Si es cocina, incluye recetas reales. Asigna horarios coherentes con las preferencias.`;
   return prompt;
 }
@@ -661,8 +691,10 @@ async function finishWizard(suggestions) {
 
   // Extract days and time from wizard answers
   const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const selectedDays = (wizState.q2ans||[]).filter(a => DAY_NAMES.includes(a));
-  const timeHints = (wizState.q3ans||[]).filter(a => a.includes('am')||a.includes('pm'));
+  const q2safe = Array.isArray(wizState.q2ans) ? wizState.q2ans : (wizState.q2ans ? [wizState.q2ans] : []);
+  const q3safe = Array.isArray(wizState.q3ans) ? wizState.q3ans : (wizState.q3ans ? [wizState.q3ans] : []);
+  const selectedDays = q2safe.filter(a => DAY_NAMES.includes(a));
+  const timeHints = [...q2safe,...q3safe].filter(a => a.includes('am')||a.includes('pm'));
   let defaultTime = null;
   if(timeHints.length) {
     if(timeHints[0].includes('6-9')||timeHints[0].includes('7-9')||timeHints[0].includes('8-12')) defaultTime='07:00';

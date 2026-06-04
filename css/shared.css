@@ -40,3 +40,39 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe 
 .ob-cm{font-size:18px;opacity:0;transition:opacity .2s}.ob-c.on .ob-cm{opacity:1}
 .g-btn{display:flex;align-items:center;gap:12px;background:#fff;color:#111;border:none;border-radius:var(--rs);padding:14px 24px;font-size:16px;font-weight:600;cursor:pointer;width:100%;max-width:320px;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:transform .15s}
 .g-btn:active{transform:scale(.97)}
+
+/* Hub / back button */
+.back-link {
+  font-size:14px;
+  color:var(--text);
+  text-decoration:none;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:9px 16px;
+  background:var(--bg3);
+  border-radius:var(--rs);
+  border:1px solid var(--border);
+  font-weight:600;
+  transition:background .15s, border-color .15s;
+  white-space:nowrap;
+}
+.back-link:hover { background:var(--bg4); border-color:rgba(255,255,255,.15); }
+.back-link:active { transform:scale(.97); }
+
+/* Hub exit button */
+.lo-link {
+  font-size:14px !important;
+  color:var(--text2) !important;
+  background:var(--bg3) !important;
+  border:1px solid var(--border) !important;
+  border-radius:var(--rs) !important;
+  cursor:pointer;
+  padding:9px 16px !important;
+  font-weight:600 !important;
+  transition:background .15s, color .15s;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.lo-link:hover { background:rgba(255,77,77,.12) !important; color:#ff8080 !important; border-color:rgba(255,77,77,.25) !important; }
+.lo-link:active { transform:scale(.97); }
